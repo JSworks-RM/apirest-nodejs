@@ -49,22 +49,44 @@ const servidor = http.createServer((req, res) => {
     req.on('end', () => { // Ciclo de vida del req. Recomendable terminar con el end
         buffer += decoder.end() // Finaliza y cierra ese mensaje de text
         console.log('Ejecutamos evento \"end\": ', buffer, '\n')
-    })
-    
-    // Enviamos la respuesta. 
-    // Describiendo una especie de enrutador usando switch para ver los diferentes casos
-    switch (rutaLimpia) {
-        case 'usuarios':
-            res.end('Ruta usuarios')
-            break
-        case 'noticias':
-            res.end('Ruta noticias')
-            break
-        default:
-            res.end('Otra ruta')
-    }
 
-});
+        // Respuesta según la ruta
+        // Capturamos toda la información que viene, que recibimos del request y la almacenamos dentro un objeto que vamos a llamarle data
+        const data = {
+            ruta: rutaLimpia,
+            metodo, // Igual que decir metodo: metodo // ECMASCRIPT6
+            query,
+            headers,
+            payload: buffer
+        }
+        
+        // Enviamos la respuesta. 
+        let handler
+        if ( rutaLimpia  && enrutador[rutaLimpia] ) {
+            handler = enrutador[rutaLimpia]
+        } else {
+            handler = enrutador.noEncontrado
+        }
+
+        handler ( data, (statusCode = 200, mensaje ) => {
+            const respuesta = JSON.stringify(mensaje) // Respuesta como string
+            res.setHeader('Content-Type', 'application/json') // Setting de los headers de las respuestas indicando el tipo. En este caso estamos enviando tipo json
+            res.writeHead(statusCode)
+            res.end(respuesta)
+        })
+    })
+})
+
+// Enrutador: Es un objeto o JSON de JS que va a tener unas funciones. Entonces vamos a hacer un match de estas funciones con las claves de ese objeto y que dispare la función callbak o handler (manejador) que esta guardada en esa llave como valor y es la que va a hacer toda la tarea que tiene esa ruta.
+const enrutador = {
+    ejemplo: ( data, callback ) => {
+        callback( 200, { mensaje: 'Esto es un ejemplo' } )
+    },
+    noEncontrado: ( data, callback ) => {
+        callback( 404, { mensaje: 'Recurso no encontrado' } )
+    } 
+}
+
 
 // El servidor debe mantener el proceso y escuchar peticiones http
 servidor.listen(3000, () => {
