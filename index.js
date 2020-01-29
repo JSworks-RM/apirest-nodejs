@@ -10,14 +10,29 @@ const servidor = http.createServer((req, res) => {
     // Obtener la url desde el request. Obtenemos y la parseamos con el método parse()
     let urlRquest = req.url
         urlParseada = url.parse( urlRquest, true ) // Crea un objeto url -> Url { ... }
-        console.log('URL parseada: ', urlParseada)
+        console.log('URL parseada: ', urlParseada, '\n')
         
     // Obtenemos la ruta
     const ruta = urlParseada.pathname
-        console.log(`Ruta: ${ruta}`)
+        console.log(`Ruta: ${ruta} \n`)
+
+    // Limpiando la ruta quitando los slashes usando método replace()
+    const rutaLimpia = ruta.replace(/^\/+|\/+$/g, '')
+        console.log(`Ruta limpia: ${rutaLimpia} \n`)
     
-    // Enviamos la respuesta
-    res.end('Hola mundo desde un servidor de nodejs');
+    // Enviamos la respuesta. 
+    // Describiendo una especie de enrutador usando switch para ver los diferentes casos
+    switch (rutaLimpia) {
+        case 'usuarios':
+            res.end('Ruta usuarios')
+            break
+        case 'noticias':
+            res.end('Ruta noticias')
+            break
+        default:
+            res.end('Otra ruta')
+    }
+
 });
 
 // El servidor debe mantener el proceso y escuchar peticiones http
