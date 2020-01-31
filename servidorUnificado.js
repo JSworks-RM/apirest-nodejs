@@ -1,5 +1,7 @@
 const url = require('url')
 const StringDecoder = require('string_decoder').StringDecoder
+const _data = require('./lib/data')
+const _identificador = require('./lib/identificador')
 
 // Enrutador: Es un objeto o JSON de JS que va a tener unas funciones. Entonces vamos a hacer un match de estas funciones con las claves de ese objeto y que dispare la función callbak o handler (manejador) que esta guardada en esa llave como valor y es la que va a hacer toda la tarea que tiene esa ruta.
 const enrutador = {
@@ -8,8 +10,38 @@ const enrutador = {
     },
     noEncontrado: ( data, callback ) => {
         callback( 404, { mensaje: 'Recurso no encontrado' } )
-    } 
-}
+    }, 
+// Nueva clave como recurso para creación de usuarios
+// Recibirá una data que viene del request y una callback
+    usuarios: (data, callback ) => {
+        switch ( data.metodo ) {
+            case 'post':
+                //const identificador = new Date().getTime();
+                const identificador = _identificador();
+                _data.crear(
+                    { 
+                        directorio: data.ruta, 
+                        archivo: identificador, 
+                        data: data.payload 
+                    }, 
+                    error => {
+                        if ( error ) {
+                            callback( 500, JSON.stringify( { error } ) )
+                        } else {
+                            callback( 201, data.payload )
+                        }
+                    }
+                )
+                break;
+            default:
+                callback( 404, {
+                    mensaje: `No puedes usar ${data.metodo} en ${data.ruta}`
+                })
+                break;
+        }
+    }
+
+} // Fín enrutador
 
 const servidorUnificado = (req, res) => { 
     // Obtener la url desde el request. Obtenemos y la parseamos con el método parse()
@@ -50,6 +82,7 @@ const servidorUnificado = (req, res) => {
         buffer += decoder.write(data) // Concatenando la data
         console.log('Buffer: ', buffer)
     })
+    
     req.on('end', () => { // Ciclo de vida del req. Recomendable terminar con el end
         buffer += decoder.end() // Finaliza y cierra ese mensaje de text
         console.log('Ejecutamos evento \"end\": ', buffer, '\n')
@@ -66,7 +99,7 @@ const servidorUnificado = (req, res) => {
         
         // Enviamos la respuesta. 
         let handler
-        if ( rutaLimpia  && enrutador[rutaLimpia] ) {
+        if ( rutaLimpia && enrutador[rutaLimpia] ) {
             handler = enrutador[rutaLimpia]
         } else {
             handler = enrutador.noEncontrado
@@ -79,6 +112,6 @@ const servidorUnificado = (req, res) => {
             res.end(respuesta)
         })
     })
-}
+} // Servidor unificado
 
 module.exports = servidorUnificado;

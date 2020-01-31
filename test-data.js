@@ -2,8 +2,8 @@ const _data = require('./lib/data')
 
 _data.crear( { 
     directorio: 'usuarios', 
-    archivo: 'test1', 
-    data:  { nombre: 'Nacho' }, 
+    archivo: 'test2', 
+    data:  { nombre: 'Nacho', edad: 38 + ' años' }, 
     },
     error => {
        if ( error ) {
