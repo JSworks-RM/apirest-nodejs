@@ -33,6 +33,37 @@ const enrutador = {
                     }
                 )
                 break;
+            case 'get':
+            // Evaluamos si hay una petición get
+            // Creramos método para obtener usuarios por método GET y verificamos que exista un usuario id y si no existe devolvemos un no encontrado.
+            // Agregamos params para agregar parámetros de esa url
+                let usuarioId
+                if ( data.params && data.params.id ) {
+                    usuarioId = data.params.id
+                } else {
+                    callback ( 404, JSON.stringify( { mensaje: 'Recurso no encontrado' } ) )
+                    break;
+                }
+                _data.obtenerUno(
+                    { 
+                        directorio: data.ruta, 
+                        archivo: usuarioId
+                    }, 
+                    (error, usuario) => {
+                        if ( error ) {
+                            callback( 500, JSON.stringify( { error } ) )
+                        } else if (usuario) {
+                            callback( 200, usuario )
+                        } else {
+                            callback(
+                                500,
+                                JSON.stringify({ error: 'Hubo un error al leer el usuario' })
+                              )
+                        }
+                    }
+                )
+                break;
+
             default:
                 callback( 404, {
                     mensaje: `No puedes usar ${data.metodo} en ${data.ruta}`
@@ -94,19 +125,30 @@ const servidorUnificado = (req, res) => {
             metodo, // Igual que decir metodo: metodo // ECMASCRIPT6
             query,
             headers,
-            payload: buffer
+            payload: buffer,
+            params: null // Vacío si no hay nada aún
         }
         
-        // Enviamos la respuesta. 
+        // Enviamos la respuesta.
+        const rutaIdentificador = rutaLimpia.split('/'), // Variable que va a verificar la ruta limpia con el slash. Si hay una ruta identificador entonces tendremos dos partes. rutaRecurso/id que vienen de la ruta identificador
+        [rutaRecurso, id] = rutaIdentificador
         let handler
+        // El handler va a verificar si dentro del enrutador existe una rutaLimpia. Si no, se va a else if a verificar si hay una ruta recurso
         if ( rutaLimpia && enrutador[rutaLimpia] ) {
             handler = enrutador[rutaLimpia]
-        } else {
+        } 
+        // Si hay una ruta recurso entonces rutaIdentificador debería tener un tamaño mayor a 0
+        else if ( rutaIdentificador.length > 0 && rutaRecurso && enrutador[rutaRecurso] && id ) {
+            data.ruta = rutaRecurso
+            data.params = { id }
+            handler = enrutador[rutaRecurso]
+        }
+        else {
             handler = enrutador.noEncontrado
         }
 
-        handler ( data, (statusCode = 200, mensaje ) => {
-            const respuesta = JSON.stringify(mensaje) // Respuesta como string
+        handler ( data, (statusCode = 200, respuesta ) => {
+            //const respuestaString = JSON.parse(respuesta) // Respuesta como string
             res.setHeader('Content-Type', 'application/json') // Setting de los headers de las respuestas indicando el tipo. En este caso estamos enviando tipo json
             res.writeHead(statusCode)
             res.end(respuesta)
