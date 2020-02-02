@@ -14,6 +14,7 @@ const enrutador = {
 // Nueva clave como recurso para creación de usuarios
 // Recibirá una data que viene del request y una callback
     usuarios: (data, callback ) => {
+        let usuarioId
         switch ( data.metodo ) {
             case 'post':
                 //const identificador = new Date().getTime();
@@ -37,11 +38,19 @@ const enrutador = {
             // Evaluamos si hay una petición get
             // Creramos método para obtener usuarios por método GET y verificamos que exista un usuario id y si no existe devolvemos un no encontrado.
             // Agregamos params para agregar parámetros de esa url
-                let usuarioId
                 if ( data.params && data.params.id ) {
                     usuarioId = data.params.id
                 } else {
-                    callback ( 404, JSON.stringify( { mensaje: 'Recurso no encontrado' } ) )
+                    // Invocación metodo que va a listar a los usuarios
+                    _data.listar ( {directorio: data.ruta }, ( error, usuarios ) => {
+                        if ( error ) {
+                            callback ( 500, JSON.stringify({ error }) )
+                        } else if ( usuarios ) {
+                            callback( 200, JSON.stringify(usuarios) )
+                        } else {
+                            callback ( 500, JSON.stringify( {error: 'Hubo un error al leer los usuarios: '} ) )
+                        }
+                    } )
                     break;
                 }
                 _data.obtenerUno(
@@ -151,6 +160,7 @@ const servidorUnificado = (req, res) => {
             //const respuestaString = JSON.parse(respuesta) // Respuesta como string
             res.setHeader('Content-Type', 'application/json') // Setting de los headers de las respuestas indicando el tipo. En este caso estamos enviando tipo json
             res.writeHead(statusCode)
+            //res.write(respuesta)
             res.end(respuesta)
         })
     })
