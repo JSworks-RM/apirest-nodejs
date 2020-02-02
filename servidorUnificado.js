@@ -119,6 +119,39 @@ const enrutador = {
                   );
                   break;
 
+            // Método delete
+            // Actualizar archivos
+            case 'delete':
+                if ( data.params && data.params.id ) {
+                    usuarioId = data.params.id
+                } else {
+                    callback (500, JSON.stringify({ mensaje: 'Recurso no encontrado'}))
+                    break;
+                }
+                _data.obtenerUno(
+                    { directorio: data.ruta, archivo: usuarioId },
+                    (error, usuario) => {
+                      if (error) {
+                        callback(404, JSON.stringify({ error }))
+                      } else if (usuario) {
+                        // En vez de enviarlo de una vez, lo vamos a eliminar
+                        _data.eliminarUno (
+                            { directorio: data.ruta, archivo: usuarioId },
+                            error => {
+                                if ( error ) return callback(500, JSON.stringify({ error }))
+                                callback (200, JSON.stringify({ mensaje: 'Usuario eliminado satisfactoriamente' }))
+                            }
+                        )
+                      } else {
+                        callback(
+                          500,
+                          JSON.stringify({ error: 'Hubo un error al leer el usuario' })
+                        );
+                      }
+                    }
+                  );
+                  break;
+
             default:
                 callback( 404, {
                     mensaje: `No puedes usar ${data.metodo} en ${data.ruta}`
