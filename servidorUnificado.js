@@ -72,14 +72,61 @@ const enrutador = {
                     }
                 )
                 break;
+            
+            // Actualizar archivos
+            case 'put':
+                if ( data.params && data.params.id ) {
+                    usuarioId = data.params.id
+                } else {
+                    callback (404, JSON.stringify({ mensaje: 'Recurso no encontrado'}))
+                    break;
+                }
+                _data.obtenerUno(
+                    { directorio: data.ruta, archivo: usuarioId },
+                    (error, usuario) => {
+                      if (error) {
+                        callback(500, JSON.stringify({ error }));
+                      } else if (usuario) {
+                        // En vez de enviarlo de una vez, lo vamos a eliminar
+                        _data.eliminarUno (
+                            { directorio: data.ruta, archivo: usuarioId },
+                            error => {
+                                if ( error ) return callback(500, JSON.stringify({ error }));
+                                // En este caso no enviamos el mensaje directamente, sino que creamos los nuevos datos
+                                _data.crear(
+                                    { 
+                                        directorio: data.ruta, 
+                                        archivo: usuarioId, 
+                                        data: data.payload 
+                                    }, 
+                                    error => {
+                                        if ( error ) {
+                                            callback( 500, JSON.stringify( { error } ) )
+                                        } else {
+                                            callback( 200, data.payload )
+                                        }
+                                    }
+                                )
+                            }
+                        )
+                      } else {
+                        callback(
+                          500,
+                          JSON.stringify({ error: 'Hubo un error al leer el usuario' })
+                        );
+                      }
+                    }
+                  );
+                  break;
 
             default:
                 callback( 404, {
                     mensaje: `No puedes usar ${data.metodo} en ${data.ruta}`
                 })
                 break;
-        }
-    }
+        } // Fín switch
+
+    }   // Fín usuarios
 
 } // Fín enrutador
 
